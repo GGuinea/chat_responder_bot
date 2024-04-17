@@ -4,12 +4,20 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"responder/api/webhooks"
 	"responder/config"
 )
 
 func main() {
 	config := config.BuildConfig()
 	listChats(config)
+	webhookServer, err := webhooks.NewWebhookServer(&webhooks.WebhookServerDeps{})
+
+	if err != nil {
+		panic(err)
+	}
+
+	webhookServer.Start()
 }
 
 func listChats(cfg *config.Config) {

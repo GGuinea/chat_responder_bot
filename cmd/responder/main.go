@@ -29,6 +29,9 @@ func main() {
 		botId = createNewBot(config)
 	}
 
+	config.SetUseBotFlag(useBot)
+	config.SetBotId(botId)
+
 	agentApi := agent.NewBasicAgentApi(config)
 
 	incomingEventsCh := make(chan model.IncomingEvent, 20)

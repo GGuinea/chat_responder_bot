@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"responder/internal/model"
@@ -32,6 +31,4 @@ func (ierh *incomingEventResponderHandler) Handle(_ http.ResponseWriter, r *http
 	}
 
 	ierh.responder.HandleNewEvent(incomingEvent)
-
-	fmt.Printf("%#+v", incomingEvent)
 }

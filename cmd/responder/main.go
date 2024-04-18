@@ -1,44 +1,35 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"net/http"
 	"responder/api/webhooks"
 	"responder/config"
+	"responder/internal/model"
+	"responder/internal/service/handlers"
+	"responder/internal/service/responder"
+	lcapi "responder/pkg/lc_api"
 )
 
 func main() {
 	config := config.BuildConfig()
-	listChats(config)
-	webhookServer, err := webhooks.NewWebhookServer(&webhooks.WebhookServerDeps{})
+
+	api := lcapi.NewBasicApi(config)
+	incomingEventsCh := make(chan model.IncomingEvent, 20)
+	responderDeps := responder.ResponderDeps{
+		IncomingEventsCh: incomingEventsCh,
+		ChatApi:          api,
+	}
+	responder := responder.NewResponder(&responderDeps)
+	handlersFacade := handlers.NewResponderHandlersFacade(responder)
+
+	webhookServer, err := webhooks.NewWebhookServer(&webhooks.WebhookServerDeps{
+		HandlersFacade: handlersFacade,
+	})
 
 	if err != nil {
 		panic(err)
 	}
 
-	webhookServer.Start()
-}
-
-func listChats(cfg *config.Config) {
-	url := buildListChatURL(*cfg.ChatAPIConfig)
-
-	request, err := http.NewRequest("POST", url, bytes.NewReader([]byte(`{}`)))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(url)
-
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", "Basic " + cfg.PAT)
-	client := &http.Client{}
-	response, err := client.Do(request) 
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(response.Body)
-}
-
-func buildListChatURL(cfg config.ChatAPI) string {
-	return cfg.BaseURL + cfg.APIVersion + "/agent/action/list_chats"
+	go webhookServer.Start()
+	go responder.Start()
+	for {}
 }

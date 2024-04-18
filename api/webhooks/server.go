@@ -3,9 +3,8 @@ package webhooks
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
-	"responder/config"
+	"responder/internal/service/handlers"
 )
 
 type HttpServer interface {
@@ -18,7 +17,7 @@ type WebhookServer struct {
 }
 
 type WebhookServerDeps struct {
-	config *config.Config
+	HandlersFacade *handlers.ResponderHandlersFacade
 }
 
 func NewWebhookServer(deps *WebhookServerDeps) (HttpServer, error) {
@@ -27,7 +26,7 @@ func NewWebhookServer(deps *WebhookServerDeps) (HttpServer, error) {
 	}
 
 	mux := http.NewServeMux()
-	buildRouter(mux)
+	buildRoutes(mux, deps.HandlersFacade)
 
 	server := &http.Server{
 		Addr:    "localhost:8080",
@@ -37,13 +36,12 @@ func NewWebhookServer(deps *WebhookServerDeps) (HttpServer, error) {
 	return &WebhookServer{server: server}, nil
 }
 
-func buildRouter(mux *http.ServeMux) {
+func buildRoutes(mux *http.ServeMux, handlerFacade *handlers.ResponderHandlersFacade){
 	mux.HandleFunc("GET /ping", pong)
-	mux.HandleFunc("POST /ping", pong)
+	mux.HandleFunc("POST /incomingevent", handlerFacade.HandleIncomingEvent())
 }
 
 func pong(w http.ResponseWriter, r *http.Request) {
-	slog.Info("received")
 	w.Write([]byte("pong"))
 }
 

@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"responder/config"
@@ -36,10 +37,15 @@ func (ba *BasicAgentApi) SendEvent(eventData interface{}) error {
 		return err
 	}
 
-	_, err = ba.Send(request)
+	response, err := ba.Send(request)
 
 	if err != nil {
 		slog.Error("Cannot make request", err)
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return fmt.Errorf("Status code different than 200; %v", response.StatusCode)
 	}
 
 	return nil

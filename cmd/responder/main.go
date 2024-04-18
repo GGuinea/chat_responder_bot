@@ -1,6 +1,10 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"log/slog"
+	"math/rand"
 	"responder/api/webhooks"
 	"responder/config"
 	"responder/internal/model"
@@ -13,10 +17,19 @@ import (
 
 func main() {
 	config := config.BuildConfig()
+	var useBot bool
+	var botId string
+
+	flag.BoolVar(&useBot, "use_bot", false, "Ans as bot")
+	flag.StringVar(&botId, "bot_id", "", "Bot id to ans")
+	flag.Parse()
+
+	if useBot && botId == "" {
+		slog.Info("Creating new bot")
+		botId = createNewBot(config)
+	}
 
 	agentApi := agent.NewBasicAgentApi(config)
-	configurationApi := configuration.NewBasicConfiguratioApi(config)
-	configurationApi.CreateBot(bots.NewDefaultBot("testowy", config.ClientID))
 
 	incomingEventsCh := make(chan model.IncomingEvent, 20)
 	responderDeps := responder.ResponderDeps{
@@ -38,4 +51,15 @@ func main() {
 	go responder.Start()
 	for {
 	}
+}
+
+func createNewBot(config *config.Config) string {
+	configurationApi := configuration.NewBasicConfiguratioApi(config)
+	botId, err := configurationApi.CreateBot(bots.NewDefaultBot(fmt.Sprintf("testowy %d", rand.Int()), config.ClientID))
+	if err != nil {
+		slog.Error("Cannot create new bot", err)
+		panic(err)
+	}
+
+	return *botId
 }

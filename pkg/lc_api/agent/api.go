@@ -48,7 +48,9 @@ func (ba *BasicAgentApi) SendEvent(eventData interface{}) error {
 func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
-	request.Header.Set("X-Author-Id", "4fabfd94e64e96627512c86ca8545a4e")
+	if ba.cfg.UseBot {
+		request.Header.Set("X-Author-Id", ba.cfg.BotId)
+	}
 	return ba.client.Do(request)
 
 }

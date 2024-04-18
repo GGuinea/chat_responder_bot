@@ -6,13 +6,13 @@ import (
 	"responder/internal/model"
 	"responder/internal/service/handlers"
 	"responder/internal/service/responder"
-	lcapi "responder/pkg/lc_api"
+	"responder/pkg/lc_api/agent"
 )
 
 func main() {
 	config := config.BuildConfig()
 
-	api := lcapi.NewBasicApi(config)
+	api := agent.NewBasicApi(config)
 	incomingEventsCh := make(chan model.IncomingEvent, 20)
 	responderDeps := responder.ResponderDeps{
 		IncomingEventsCh: incomingEventsCh,

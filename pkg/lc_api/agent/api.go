@@ -1,4 +1,4 @@
-package lcapi
+package agent
 
 import (
 	"bytes"

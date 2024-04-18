@@ -9,11 +9,13 @@ import (
 type Responder interface {
 	Start()
 	HandleNewEvent(event model.IncomingEvent)
+	GracefulStop()
 }
 
 type BasicResponder struct {
 	incomingEvents chan model.IncomingEvent
 	chatApi        agent.LcAgentApi
+	close          chan struct{}
 }
 
 type ResponderDeps struct {
@@ -41,6 +43,8 @@ func (r *BasicResponder) Start() {
 				slog.Error("Cannot make response; ", err)
 				return
 			}
+		case <-r.close:
+			return
 		}
 	}
 }
@@ -53,4 +57,8 @@ func (r *BasicResponder) doResponse(event model.IncomingEvent) error {
 	slog.Info("Trying to send event")
 	response := model.NewDefaultMessageEvent(event.Payload.ChatId, "Response from my bot")
 	return r.chatApi.SendEvent(response)
+}
+
+func (r *BasicResponder) GracefulStop() {
+	r.close <- struct{}{}
 }

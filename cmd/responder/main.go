@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"os"
+	"os/signal"
 	"responder/api/webhooks"
 	"responder/config"
 	"responder/internal/model"
@@ -13,6 +16,8 @@ import (
 	"responder/internal/service/responder"
 	"responder/pkg/lc_api/agent"
 	"responder/pkg/lc_api/configuration"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -52,7 +57,23 @@ func main() {
 
 	go webhookServer.Start()
 	go responder.Start()
-	for {
+
+	stopCh := make(chan os.Signal)
+	signal.Notify(stopCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-stopCh
+
+	contextWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := webhookServer.GracefulStop(contextWithTimeout); err != nil {
+		slog.Info("Server shoutdown error", err)
+	}
+
+	select {
+	case <-contextWithTimeout.Done():
+		slog.Info("webhook server shoutdown, waiting for responder")
+		time.Sleep(2 * time.Second)
+		slog.Info("responder shoutdown")
 	}
 }
 

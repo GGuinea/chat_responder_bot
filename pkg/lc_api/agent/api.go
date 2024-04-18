@@ -8,23 +8,23 @@ import (
 	"responder/config"
 )
 
-type LcApi interface {
+type LcAgentApi interface {
 	SendEvent(interface{}) error
 }
 
-type BasicApi struct {
+type BasicAgentApi struct {
 	cfg    *config.Config
 	client *http.Client
 }
 
-func NewBasicApi(cfg *config.Config) *BasicApi {
-	return &BasicApi{
+func NewBasicAgentApi(cfg *config.Config) *BasicAgentApi {
+	return &BasicAgentApi{
 		cfg:    cfg,
 		client: &http.Client{},
 	}
 }
 
-func (ba *BasicApi) SendEvent(eventData interface{}) error {
+func (ba *BasicAgentApi) SendEvent(eventData interface{}) error {
 	url := buildSendEventURL(*ba.cfg.ChatAPIConfig)
 	body, err := json.Marshal(eventData)
 	if err != nil {
@@ -45,7 +45,7 @@ func (ba *BasicApi) SendEvent(eventData interface{}) error {
 	return nil
 }
 
-func (ba *BasicApi) Send(request *http.Request) (*http.Response, error) {
+func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
 	return ba.client.Do(request)

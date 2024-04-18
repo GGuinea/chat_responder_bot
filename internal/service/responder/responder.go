@@ -3,7 +3,7 @@ package responder
 import (
 	"log/slog"
 	"responder/internal/model"
-	lcapi "responder/pkg/lc_api"
+	"responder/pkg/lc_api/agent"
 )
 
 type Responder interface {
@@ -13,12 +13,12 @@ type Responder interface {
 
 type BasicResponder struct {
 	incomingEvents chan model.IncomingEvent
-	chatApi        lcapi.LcApi
+	chatApi        agent.LcAgentApi
 }
 
 type ResponderDeps struct {
 	IncomingEventsCh chan model.IncomingEvent
-	ChatApi          lcapi.LcApi
+	ChatApi          agent.LcAgentApi
 }
 
 func NewResponder(deps *ResponderDeps) *BasicResponder {

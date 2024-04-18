@@ -4,19 +4,24 @@ import (
 	"responder/api/webhooks"
 	"responder/config"
 	"responder/internal/model"
+	"responder/internal/model/bots"
 	"responder/internal/service/handlers"
 	"responder/internal/service/responder"
 	"responder/pkg/lc_api/agent"
+	"responder/pkg/lc_api/configuration"
 )
 
 func main() {
 	config := config.BuildConfig()
 
-	api := agent.NewBasicApi(config)
+	agentApi := agent.NewBasicAgentApi(config)
+	configurationApi := configuration.NewBasicConfiguratioApi(config)
+	configurationApi.CreateBot(bots.NewDefaultBot("testowy", config.ClientID))
+
 	incomingEventsCh := make(chan model.IncomingEvent, 20)
 	responderDeps := responder.ResponderDeps{
 		IncomingEventsCh: incomingEventsCh,
-		ChatApi:          api,
+		ChatApi:          agentApi,
 	}
 	responder := responder.NewResponder(&responderDeps)
 	handlersFacade := handlers.NewResponderHandlersFacade(responder)
@@ -31,5 +36,6 @@ func main() {
 
 	go webhookServer.Start()
 	go responder.Start()
-	for {}
+	for {
+	}
 }

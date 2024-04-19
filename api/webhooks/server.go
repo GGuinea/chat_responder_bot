@@ -38,7 +38,7 @@ func NewWebhookServer(deps *WebhookServerDeps) (HttpServer, error) {
 
 func buildRoutes(mux *http.ServeMux, handlerFacade *handlers.ResponderHandlersFacade){
 	mux.HandleFunc("GET /ping", pong)
-	mux.HandleFunc("POST /incomingevent", handlerFacade.HandleIncomingEvent())
+	mux.HandleFunc("POST /incoming_event", handlerFacade.HandleIncomingEvent())
 }
 
 func pong(w http.ResponseWriter, r *http.Request) {

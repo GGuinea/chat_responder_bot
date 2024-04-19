@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"responder/config"
@@ -83,8 +84,14 @@ func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 	}
 
 	if response.StatusCode != 200 {
+		errorBody, err := io.ReadAll(response.Body)
+		if err != nil {
+			slog.Error("Cannot decode body for error")
+		}
+		slog.Error("Status code different than 200; ", slog.Any("statusCode", response.StatusCode), slog.Any("error", string(errorBody)))
 		return nil, fmt.Errorf("Status code different than 200; %v", response.StatusCode)
 	}
+
 	return response, nil
 
 }

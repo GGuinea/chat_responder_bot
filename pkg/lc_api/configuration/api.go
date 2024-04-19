@@ -3,6 +3,8 @@ package configuration
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"responder/config"
@@ -39,13 +41,8 @@ func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, 
 	}
 
 	response, err := bc.Send(request)
-
 	if err != nil {
-		slog.Error("Cannot make request", err)
-	}
-
-	if response.StatusCode != 200 {
-		slog.Info("Status code different than 200; ", slog.Any("statusCode", response.StatusCode))
+		return nil, fmt.Errorf("Cannot create bot")
 	}
 
 	var respDto model.CreateBotResponse
@@ -63,8 +60,22 @@ func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, 
 func (ba *BasicConfigurationApi) Send(request *http.Request) (*http.Response, error) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
-	return ba.client.Do(request)
 
+	response, err := ba.client.Do(request)
+	if err != nil {
+		slog.Error("Cannot make request", err)
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		errorBody, err := io.ReadAll(response.Body)
+		if err != nil {
+			slog.Error("Cannot decode body for error")
+		}
+		slog.Error("Status code different than 200; ", slog.Any("statusCode", response.StatusCode), slog.Any("error", string(errorBody)))
+	}
+
+	return response, nil
 }
 
 func buildCreateBotURL(cfg config.ChatAPI) string {

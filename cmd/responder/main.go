@@ -46,7 +46,7 @@ func main() {
 		ChatApi:          agentApi,
 	}
 	responder := responder.NewResponder(&responderDeps)
-	handlersFacade := handlers.NewResponderHandlersFacade(responder)
+	handlersFacade := handlers.NewResponderHandlersFacade(responder, config.WebhooksSecrets)
 
 	webhookServer, err := webhooks.NewWebhookServer(&webhooks.WebhookServerDeps{
 		HandlersFacade: handlersFacade,

@@ -9,9 +9,9 @@ type ResponderHandlersFacade struct {
 	incomingEventHandler *incomingEventResponderHandler
 }
 
-func NewResponderHandlersFacade(responder responder.Responder) *ResponderHandlersFacade {
+func NewResponderHandlersFacade(responder responder.Responder, webhookSecrets []string) *ResponderHandlersFacade {
 	return &ResponderHandlersFacade{
-		incomingEventHandler: newIncomingEventResponderHandler(responder),
+		incomingEventHandler: newIncomingEventResponderHandler(responder, webhookSecrets),
 	}
 }
 

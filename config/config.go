@@ -1,13 +1,17 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 type Config struct {
-	PAT           string
-	ClientID      string
-	BotId         string
-	UseBot        bool
-	ChatAPIConfig *ChatAPI
+	PAT             string
+	ClientID        string
+	BotId           string
+	UseBot          bool
+	WebhooksSecrets []string
+	ChatAPIConfig   *ChatAPI
 }
 
 type ChatAPI struct {
@@ -17,9 +21,10 @@ type ChatAPI struct {
 
 func BuildConfig() *Config {
 	return &Config{
-		PAT:           os.Getenv("PAT"),
-		ClientID:      os.Getenv("CLIENT_ID"),
-		ChatAPIConfig: buildChatApi(),
+		PAT:             os.Getenv("PAT"),
+		ClientID:        os.Getenv("CLIENT_ID"),
+		WebhooksSecrets: parseWebhooksecrets(),
+		ChatAPIConfig:   buildChatApi(),
 	}
 }
 
@@ -36,4 +41,9 @@ func (c *Config) SetUseBotFlag(val bool) {
 
 func (c *Config) SetBotId(val string) {
 	c.BotId = val
+}
+
+func parseWebhooksecrets() []string {
+	stringWithCommas := os.Getenv("WEBHOOK_SECRETS")
+	return strings.Split(stringWithCommas, ",")
 }

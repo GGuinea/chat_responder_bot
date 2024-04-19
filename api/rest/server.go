@@ -40,7 +40,6 @@ func buildRoutes(mux *http.ServeMux, handlerFacade *handlers.ResponderHandlersFa
 	mux.HandleFunc("GET /ping", pong)
 	mux.HandleFunc("POST /incoming_event", handlerFacade.HandleIncomingEvent())
 	mux.HandleFunc("GET /auth", handlerFacade.HandleAuthCode())
-	mux.HandleFunc("GET /grant", pong)
 }
 
 func pong(w http.ResponseWriter, r *http.Request) {

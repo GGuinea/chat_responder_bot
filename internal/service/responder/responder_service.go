@@ -55,7 +55,7 @@ func (r *BasicResponder) HandleNewEvent(event model.IncomingEvent) {
 
 func (r *BasicResponder) doResponse(event model.IncomingEvent) error {
 	slog.Info("Trying to send event")
-	response := model.NewDefaultMessageEvent(event.Payload.ChatId, "Response from my bot")
+	response := model.NewRichCardMessageEvent(event.Payload.ChatId)
 	return r.chatApi.SendEvent(response)
 }
 

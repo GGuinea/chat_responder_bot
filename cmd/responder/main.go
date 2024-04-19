@@ -38,6 +38,7 @@ func main() {
 	config.SetBotId(botId)
 
 	agentApi := agent.NewBasicAgentApi(config)
+	activateBot(agentApi, botId)
 
 	incomingEventsCh := make(chan model.IncomingEvent, 20)
 	responderDeps := responder.ResponderDeps{
@@ -73,7 +74,8 @@ func main() {
 	case <-contextWithTimeout.Done():
 		slog.Info("webhook server shoutdown, waiting for responder")
 		time.Sleep(2 * time.Second)
-		slog.Info("responder shoutdown")
+		slog.Info("responder shoutdown, deactivating bot")
+		setNotAcceptChatsFlag(agentApi, botId)
 	}
 }
 
@@ -87,3 +89,13 @@ func createNewBot(config *config.Config) string {
 
 	return *botId
 }
+
+func activateBot(agentApi agent.LcAgentApi, botId string) error {
+	return agentApi.SetBotRoutingStatus(botId, bots.ACCEPTING_CHATS)
+}
+
+func setNotAcceptChatsFlag(agentApi agent.LcAgentApi, botId string) error {
+	return agentApi.SetBotRoutingStatus(botId, bots.NOT_ACCEPTING_CHATS)
+}
+
+

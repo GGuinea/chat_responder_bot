@@ -7,10 +7,12 @@ import (
 	"log/slog"
 	"net/http"
 	"responder/config"
+	"responder/pkg/lc_api/agent/model"
 )
 
 type LcAgentApi interface {
-	SendEvent(interface{}) error
+	SendEvent(event interface{}) error
+	SetBotRoutingStatus(botId string, status string) error
 }
 
 type BasicAgentApi struct {
@@ -37,17 +39,33 @@ func (ba *BasicAgentApi) SendEvent(eventData interface{}) error {
 		return err
 	}
 
-	response, err := ba.Send(request)
+	_, err = ba.Send(request)
 
 	if err != nil {
-		slog.Error("Cannot make request", err)
 		return err
 	}
 
-	if response.StatusCode != 200 {
-		return fmt.Errorf("Status code different than 200; %v", response.StatusCode)
+	return nil
+}
+
+func (ba *BasicAgentApi) SetBotRoutingStatus(botId, status string) error {
+	url := buildSetBotStatusURL(*ba.cfg.ChatAPIConfig)
+	reqStruct := model.NewSetRouteStatusRequest(status, botId)
+
+	body, err := json.Marshal(reqStruct)
+	if err != nil {
+		return err
 	}
 
+	request, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	_, err = ba.Send(request)
+	if err != nil {
+		return nil
+	}
 	return nil
 }
 
@@ -57,7 +75,17 @@ func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 	if ba.cfg.UseBot {
 		request.Header.Set("X-Author-Id", ba.cfg.BotId)
 	}
-	return ba.client.Do(request)
+	response, err := ba.client.Do(request)
+
+	if err != nil {
+		slog.Error("Cannot make request", err)
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("Status code different than 200; %v", response.StatusCode)
+	}
+	return response, nil
 
 }
 
@@ -65,6 +93,6 @@ func buildSendEventURL(cfg config.ChatAPI) string {
 	return cfg.BaseURL + cfg.APIVersion + "/agent/action/send_event"
 }
 
-func buildListChatURL(cfg config.ChatAPI) string {
-	return cfg.BaseURL + cfg.APIVersion + "/agent/action/list_chats"
+func buildSetBotStatusURL(cfg config.ChatAPI) string {
+	return cfg.BaseURL + cfg.APIVersion + "/agent/action/set_routing_status"
 }

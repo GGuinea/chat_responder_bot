@@ -72,7 +72,11 @@ func (ba *BasicAgentApi) SetBotRoutingStatus(botId, status string) error {
 
 func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
+	if ba.cfg.UsePAT {
+		request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
+	} else {
+		request.Header.Set("Authorization", "Bearer "+ba.cfg.OauthConfig.AccessToken)
+	}
 	if ba.cfg.UseBot {
 		request.Header.Set("X-Author-Id", ba.cfg.BotId)
 	}

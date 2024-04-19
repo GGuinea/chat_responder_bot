@@ -8,13 +8,14 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
-	"responder/api/webhooks"
+	"responder/api/rest"
 	"responder/config"
 	"responder/internal/model"
 	"responder/internal/model/bots"
 	"responder/internal/service/handlers"
 	"responder/internal/service/responder"
 	"responder/pkg/lc_api/agent"
+	"responder/pkg/lc_api/auth"
 	"responder/pkg/lc_api/configuration"
 	"syscall"
 	"time"
@@ -23,10 +24,12 @@ import (
 func main() {
 	config := config.BuildConfig()
 	var useBot bool
+	var usePAT bool
 	var botId string
 
 	flag.BoolVar(&useBot, "use_bot", false, "Ans as bot")
 	flag.StringVar(&botId, "bot_id", "", "Bot id to ans")
+	flag.BoolVar(&usePAT, "use_pat", false, "Use PAT with basic auth")
 	flag.Parse()
 
 	if useBot && botId == "" {
@@ -36,6 +39,7 @@ func main() {
 
 	config.SetUseBotFlag(useBot)
 	config.SetBotId(botId)
+	config.SetUsePATFlag(usePAT)
 
 	agentApi := agent.NewBasicAgentApi(config)
 	activateBot(agentApi, config.BotId)
@@ -46,9 +50,10 @@ func main() {
 		ChatApi:          agentApi,
 	}
 	responder := responder.NewResponder(&responderDeps)
-	handlersFacade := handlers.NewResponderHandlersFacade(responder, config.WebhooksSecrets)
+	authApi := auth.NewBasichAuthApi()
+	handlersFacade := handlers.NewResponderHandlersFacade(responder, config.WebhooksSecrets, config, authApi)
 
-	webhookServer, err := webhooks.NewWebhookServer(&webhooks.WebhookServerDeps{
+	restServer, err := rest.NewRestServer(&rest.RestServerDeps{
 		HandlersFacade: handlersFacade,
 	})
 
@@ -56,7 +61,7 @@ func main() {
 		panic(err)
 	}
 
-	go webhookServer.Start()
+	go restServer.Start()
 	go responder.Start()
 
 	stopCh := make(chan os.Signal)
@@ -66,7 +71,7 @@ func main() {
 	contextWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	if err := webhookServer.GracefulStop(contextWithTimeout); err != nil {
+	if err := restServer.GracefulStop(contextWithTimeout); err != nil {
 		slog.Info("Server shoutdown error", err)
 	}
 

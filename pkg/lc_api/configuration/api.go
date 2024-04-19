@@ -59,7 +59,11 @@ func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, 
 
 func (ba *BasicConfigurationApi) Send(request *http.Request) (*http.Response, error) {
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
+	if ba.cfg.UsePAT {
+		request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
+	} else {
+		request.Header.Set("Authorization", "Bearer "+ba.cfg.OauthConfig.AccessToken)
+	}
 
 	response, err := ba.client.Do(request)
 	if err != nil {

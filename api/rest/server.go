@@ -1,4 +1,4 @@
-package webhooks
+package rest
 
 import (
 	"context"
@@ -12,15 +12,15 @@ type HttpServer interface {
 	GracefulStop(ctx context.Context) error
 }
 
-type WebhookServer struct {
+type RestServer struct {
 	server *http.Server
 }
 
-type WebhookServerDeps struct {
+type RestServerDeps struct {
 	HandlersFacade *handlers.ResponderHandlersFacade
 }
 
-func NewWebhookServer(deps *WebhookServerDeps) (HttpServer, error) {
+func NewRestServer(deps *RestServerDeps) (HttpServer, error) {
 	if deps == nil {
 		return nil, errors.New("Deps cannot be null")
 	}
@@ -33,22 +33,24 @@ func NewWebhookServer(deps *WebhookServerDeps) (HttpServer, error) {
 		Handler: mux,
 	}
 
-	return &WebhookServer{server: server}, nil
+	return &RestServer{server: server}, nil
 }
 
-func buildRoutes(mux *http.ServeMux, handlerFacade *handlers.ResponderHandlersFacade){
+func buildRoutes(mux *http.ServeMux, handlerFacade *handlers.ResponderHandlersFacade) {
 	mux.HandleFunc("GET /ping", pong)
 	mux.HandleFunc("POST /incoming_event", handlerFacade.HandleIncomingEvent())
+	mux.HandleFunc("GET /auth", handlerFacade.HandleAuthCode())
+	mux.HandleFunc("GET /grant", pong)
 }
 
 func pong(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("pong"))
 }
 
-func (whs *WebhookServer) Start() error {
+func (whs *RestServer) Start() error {
 	return whs.server.ListenAndServe()
 }
 
-func (whs *WebhookServer) GracefulStop(ctx context.Context) error {
+func (whs *RestServer) GracefulStop(ctx context.Context) error {
 	return whs.server.Shutdown(ctx)
 }

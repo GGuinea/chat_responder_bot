@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"responder/config"
-	"responder/pkg/lc_api/configuration/model"
+	"responder/pkg/lc_api/common"
 )
 
 type LcConfigurationApi interface {
@@ -42,18 +41,16 @@ func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, 
 
 	response, err := bc.Send(request)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot create bot")
+		return nil, fmt.Errorf("Cannot create bot; %w", err)
 	}
 
-	var respDto model.CreateBotResponse
+	var respDto CreateBotResponse
 
-	defer response.Body.Close()
 	err = json.NewDecoder(response.Body).Decode(&respDto)
 	if err != nil {
 		slog.Error("Cannot decode create bot response; ", err)
 	}
 
-	slog.Info(respDto.Id)
 	return &respDto.Id, nil
 }
 
@@ -67,16 +64,11 @@ func (ba *BasicConfigurationApi) Send(request *http.Request) (*http.Response, er
 
 	response, err := ba.client.Do(request)
 	if err != nil {
-		slog.Error("Cannot make request", err)
 		return nil, err
 	}
 
 	if response.StatusCode != http.StatusOK {
-		errorBody, err := io.ReadAll(response.Body)
-		if err != nil {
-			slog.Error("Cannot decode body for error")
-		}
-		slog.Error("Status code different than 200; ", slog.Any("statusCode", response.StatusCode), slog.Any("error", string(errorBody)))
+		return nil, common.DecodeError(response.Body)
 	}
 
 	return response, nil

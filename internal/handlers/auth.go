@@ -30,17 +30,19 @@ func (nacch *authCodeCallbackHandler) Handle(w http.ResponseWriter, r *http.Requ
 
 	accessTokenReponse, err := nacch.authAPi.Exchange(auth.NewDefaultAccessTokenGrantRequest(code, nacch.config.ClientID, nacch.config.OauthConfig.ClientSecret, nacch.config.OauthConfig.RedirectURI))
 
+	if err != nil {
+		slog.Error("Cannot perform oauth flow; ", slog.Any("msg", err))
+		w.Write([]byte("Retry the operation"))
+		return
+	}
+
+	fmt.Println(accessTokenReponse.AccessToken)
+
 	nacch.config.SetAccessToken(accessTokenReponse.AccessToken)
 	nacch.config.SetRefreshToken(accessTokenReponse.RefreshToken)
 	nacch.config.SetExpiresIn(accessTokenReponse.ExpiresIn)
 	nacch.config.SetAccessTokenCreationTime(time.Now())
 
-	fmt.Println(accessTokenReponse.AccessToken)
 
-	if err != nil {
-		slog.Error("Cannot perform oauth flow\n", err)
-		w.Write([]byte("Retry the operation"))
-		return
-	}
 	w.Write([]byte("SUCCESS - you can close this window"))
 }

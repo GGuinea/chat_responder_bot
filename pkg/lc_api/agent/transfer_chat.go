@@ -1,6 +1,6 @@
-package model
+package agent
 
-type TransferToAgentRequest struct {
+type transferToAgentRequest struct {
 	ChatId string         `json:"id"`
 	Target transferTarget `json:"target"`
 }
@@ -10,7 +10,7 @@ type transferTarget struct {
 	IDs  []string `json:"ids"`
 }
 
-func NewTransferToAgentRequest(chatId, agentId string) TransferToAgentRequest {
+func newTransferToAgentRequest(chatId, agentId string) transferToAgentRequest {
 	transferTargetStruct := transferTarget{
 		Type: "agent",
 		IDs: []string{
@@ -18,7 +18,7 @@ func NewTransferToAgentRequest(chatId, agentId string) TransferToAgentRequest {
 		},
 	}
 
-	return TransferToAgentRequest{
+	return transferToAgentRequest{
 		ChatId: chatId,
 		Target: transferTargetStruct,
 	}

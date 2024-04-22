@@ -1,6 +1,6 @@
 package model
 
-type WebhookEvent struct {
+type WebhookMsg struct {
 	SecretKey string `json:"secret_key"`
 	Action    string `json:"action"`
 }

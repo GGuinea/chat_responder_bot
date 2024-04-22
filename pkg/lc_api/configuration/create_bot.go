@@ -1,4 +1,4 @@
-package model
+package configuration
 
 type CreateBotResponse struct {
 	Id     string `json:"id"`

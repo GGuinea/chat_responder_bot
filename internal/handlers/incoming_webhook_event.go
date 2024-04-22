@@ -30,7 +30,7 @@ var (
 
 func (weh *webhookEventHandler) Handle(_ http.ResponseWriter, r *http.Request) {
 	slog.Info("New event received")
-	var webhookEvent model.WebhookEvent
+	var webhookEvent model.WebhookMsg
 
 	defer r.Body.Close()
 

@@ -10,9 +10,9 @@ import (
 	"os/signal"
 	"responder/api/rest"
 	"responder/config"
+	"responder/internal/handlers"
+	"responder/internal/service"
 	"responder/internal/model/bots"
-	"responder/internal/service/handlers"
-	"responder/internal/service/responder"
 	"responder/pkg/lc_api/agent"
 	"responder/pkg/lc_api/auth"
 	"responder/pkg/lc_api/configuration"
@@ -44,11 +44,12 @@ func main() {
 	agentApi := agent.NewBasicAgentApi(config)
 	activateBot(agentApi, config.BotId)
 
-	responderDeps := responder.ResponderDeps{
+	responderDeps := service.ResponderDeps{
 		ChatApi: agentApi,
 		Config:  config,
 	}
-	responder := responder.NewResponder(&responderDeps)
+
+	responder := service.NewResponder(&responderDeps)
 	authApi := auth.NewBasichAuthApi()
 	handlersFacade := handlers.NewResponderHandlersFacade(responder, config.WebhooksSecrets, config, authApi)
 

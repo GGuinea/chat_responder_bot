@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"responder/internal/service/handlers"
+	"responder/internal/handlers"
 )
 
 type HttpServer interface {

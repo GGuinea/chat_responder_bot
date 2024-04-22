@@ -7,16 +7,16 @@ import (
 	"log/slog"
 	"net/http"
 	"responder/internal/model"
-	"responder/internal/service/responder"
+	"responder/internal/service"
 	"slices"
 )
 
 type webhookEventHandler struct {
-	responder responder.Responder
+	responder service.Responder
 	secrets   []string
 }
 
-func newWebhookEventHandler(responder responder.Responder, secrets []string) *webhookEventHandler {
+func newWebhookEventHandler(responder service.Responder, secrets []string) *webhookEventHandler {
 	return &webhookEventHandler{
 		responder: responder,
 		secrets:   secrets,

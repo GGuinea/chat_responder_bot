@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 	"responder/config"
-	"responder/internal/service/responder"
+	"responder/internal/service"
 	"responder/pkg/lc_api/auth"
 )
 
@@ -12,7 +12,7 @@ type ResponderHandlersFacade struct {
 	authCodeCallbackHandler *authCodeCallbackHandler
 }
 
-func NewResponderHandlersFacade(responder responder.Responder, webhookSecrets []string, config *config.Config, authApi auth.LcAuthApi) *ResponderHandlersFacade {
+func NewResponderHandlersFacade(responder service.Responder, webhookSecrets []string, config *config.Config, authApi auth.LcAuthApi) *ResponderHandlersFacade {
 	return &ResponderHandlersFacade{
 		webhookHandler:    newWebhookEventHandler(responder, webhookSecrets),
 		authCodeCallbackHandler: newAuthCodeCallbackHandler(config, authApi),

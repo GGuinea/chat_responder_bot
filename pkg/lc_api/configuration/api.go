@@ -11,7 +11,8 @@ import (
 )
 
 type LcConfigurationApi interface {
-	CreateBot() (string, error)
+	CreateBot(botData interface{}) (*string, error)
+	ListBots() ([]string, error)
 }
 
 type BasicConfigurationApi struct {
@@ -42,6 +43,31 @@ func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, 
 	}
 
 	return &respDto.Id, nil
+}
+
+func (bc *BasicConfigurationApi) ListBots() ([]string, error) {
+	url := buildListBotsURL(*bc.cfg.ChatAPIConfig)
+	response, err := bc.send(newListBotsRequest(), url)
+
+	if err != nil {
+		return nil, fmt.Errorf("Cannot create bot; %w", err)
+	}
+
+	var respDto []listBotsResponse
+
+	err = json.NewDecoder(response.Body).Decode(&respDto)
+
+	if err != nil {
+		slog.Error("Cannot decode create bot response; ", err)
+	}
+	return extractIds(respDto), nil
+}
+
+func extractIds(resp []listBotsResponse) (ids []string) {
+	for _, bot := range resp {
+		ids = append(ids, bot.Id)
+	}
+	return
 }
 
 func (ba *BasicConfigurationApi) send(requestData interface{}, url string) (*http.Response, error) {
@@ -76,4 +102,8 @@ func (ba *BasicConfigurationApi) send(requestData interface{}, url string) (*htt
 
 func buildCreateBotURL(cfg config.ChatAPI) string {
 	return cfg.BaseURL + cfg.APIVersion + "/configuration/action/create_bot"
+}
+
+func buildListBotsURL(cfg config.ChatAPI) string {
+	return cfg.BaseURL + cfg.APIVersion + "/configuration/action/list_bots"
 }

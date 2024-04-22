@@ -1,12 +1,13 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"responder/config"
 	"responder/internal/model"
 	"responder/pkg/lc_api/agent"
+	"responder/pkg/lc_api/configuration"
+	"slices"
 )
 
 type Responder interface {
@@ -17,23 +18,26 @@ type Responder interface {
 }
 
 type BasicResponder struct {
-	incomingEvents chan model.ResponderEvent
-	chatApi        agent.LcAgentApi
-	close          chan struct{}
-	config         *config.Config
+	incomingEvents   chan model.ResponderEvent
+	chatApi          agent.LcAgentApi
+	configurationAPI configuration.LcConfigurationApi
+	close            chan struct{}
+	config           *config.Config
 }
 
 type ResponderDeps struct {
-	ChatApi agent.LcAgentApi
-	Config  *config.Config
+	ChatApi          agent.LcAgentApi
+	Config           *config.Config
+	ConfigurationApi configuration.LcConfigurationApi
 }
 
 func NewResponder(deps *ResponderDeps) *BasicResponder {
 	return &BasicResponder{
-		incomingEvents: make(chan model.ResponderEvent, 20),
-		chatApi:        deps.ChatApi,
-		close:          make(chan struct{}),
-		config:         deps.Config,
+		incomingEvents:   make(chan model.ResponderEvent, 20),
+		chatApi:          deps.ChatApi,
+		configurationAPI: deps.ConfigurationApi,
+		close:            make(chan struct{}),
+		config:           deps.Config,
 	}
 }
 
@@ -99,22 +103,32 @@ func (r *BasicResponder) transferToHuman(chatId string) error {
 	if err != nil {
 		return err
 	}
-	var agentToTransfer string
-	slog.Info("Number of available agents to transfer: ", slog.Any("agents", len(availableAgents)))
-	for _, agentId := range availableAgents {
-		if r.config.BotId != agentId {
-			agentToTransfer = agentId
-		}
+
+	botsIds, err := r.configurationAPI.ListBots()
+	if err != nil {
+		return fmt.Errorf("Cannot list bots; %w", err)
 	}
 
-	if agentToTransfer == "" {
-		return errors.New("No available agents to pick")
+	filtered := filterOutBots(availableAgents, botsIds)
+
+	slog.Info("Transfer summary", slog.Any("availableAgents", len(availableAgents)), slog.Any("bots", len(botsIds)), slog.Any("after filtration", len(filtered)))
+	if len(filtered) == 0 {
+		return fmt.Errorf("No available human agents!")
 	}
 
-	err = r.chatApi.TransferChat(chatId, agentToTransfer)
+	err = r.chatApi.TransferChat(chatId, filtered[0])
 	if err != nil {
 		return fmt.Errorf("Cannot transfer %v", err)
 	}
 
 	return nil
+}
+
+func filterOutBots(availableAgentsIds []string, botsIds []string) (properIds []string) {
+	for _, agentId := range availableAgentsIds {
+		if !slices.Contains(botsIds, agentId) {
+			properIds = append(properIds, agentId)
+		}
+	}
+	return
 }

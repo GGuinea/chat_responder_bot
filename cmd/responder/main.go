@@ -31,9 +31,11 @@ func main() {
 
 	flag.Parse()
 
+	configurationApi := configuration.NewBasicConfiguratioApi(config)
+
 	if useBot && botId == "" {
 		slog.Info("Creating new bot...")
-		botId = createNewBot(config)
+		botId = createNewBot(configurationApi, config)
 	}
 
 	config.SetUseBotFlag(useBot)
@@ -44,8 +46,9 @@ func main() {
 	activateBot(agentApi, config.BotId)
 
 	responder := service.NewResponder(&service.ResponderDeps{
-		ChatApi: agentApi,
-		Config:  config,
+		ChatApi:          agentApi,
+		Config:           config,
+		ConfigurationApi: configurationApi,
 	})
 
 	authApi := auth.NewBasicAuthApi()
@@ -87,9 +90,8 @@ func main() {
 	}
 }
 
-func createNewBot(config *config.Config) string {
-	configurationApi := configuration.NewBasicConfiguratioApi(config)
-	botId, err := configurationApi.CreateBot(configuration.NewDefaultBot(fmt.Sprintf("testowy %d", rand.Int()), config.ClientID))
+func createNewBot(confAPI configuration.LcConfigurationApi, config *config.Config) string {
+	botId, err := confAPI.CreateBot(configuration.NewDefaultBot(fmt.Sprintf("testowy %d", rand.Int()), config.ClientID))
 	if err != nil {
 		slog.Error("Cannot create new bot", err)
 		panic(err)

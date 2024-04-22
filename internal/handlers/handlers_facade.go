@@ -8,14 +8,20 @@ import (
 )
 
 type ResponderHandlersFacade struct {
-	webhookHandler    *webhookEventHandler
+	webhookHandler          *webhookEventHandler
 	authCodeCallbackHandler *authCodeCallbackHandler
 }
 
-func NewResponderHandlersFacade(responder service.Responder, webhookSecrets []string, config *config.Config, authApi auth.LcAuthApi) *ResponderHandlersFacade {
+type ResponderHandlerFacadeDeps struct {
+	Responder service.Responder
+	Config    *config.Config
+	AuthApi   auth.LcAuthApi
+}
+
+func NewResponderHandlersFacade(deps *ResponderHandlerFacadeDeps) *ResponderHandlersFacade {
 	return &ResponderHandlersFacade{
-		webhookHandler:    newWebhookEventHandler(responder, webhookSecrets),
-		authCodeCallbackHandler: newAuthCodeCallbackHandler(config, authApi),
+		webhookHandler:          newWebhookEventHandler(deps.Responder, deps.Config.WebhooksSecrets),
+		authCodeCallbackHandler: newAuthCodeCallbackHandler(deps.Config, deps.AuthApi),
 	}
 }
 

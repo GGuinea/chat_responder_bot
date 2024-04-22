@@ -2,19 +2,21 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type Config struct {
-	PAT             string
-	ClientID        string
-	BotId           string
-	UseBot          bool
-	UsePAT          bool
-	WebhooksSecrets []string
-	ChatAPIConfig   *ChatAPI
-	OauthConfig     *OAuth
+	PAT                     string
+	ClientID                string
+	BotId                   string
+	UseBot                  bool
+	UsePAT                  bool
+	WebhooksSecrets         []string
+	GracefulShutdownTimeout int
+	ChatAPIConfig           *ChatAPI
+	OauthConfig             *OAuth
 }
 
 type ChatAPI struct {
@@ -35,6 +37,7 @@ func BuildConfig() *Config {
 	return &Config{
 		PAT:             os.Getenv("PAT"),
 		ClientID:        os.Getenv("CLIENT_ID"),
+		GracefulShutdownTimeout: getIntEnv("GRACEFUL_SHUTDOWN_TIMEOUT"),
 		WebhooksSecrets: parseWebhooksecrets(),
 		ChatAPIConfig:   buildChatApi(),
 		OauthConfig:     buildOAuth(),
@@ -90,4 +93,13 @@ func (c *Config) SetAccessTokenCreationTime(val time.Time) {
 func parseWebhooksecrets() []string {
 	stringWithCommas := os.Getenv("WEBHOOK_SECRETS")
 	return strings.Split(stringWithCommas, ",")
+}
+
+func getIntEnv(name string) int {
+	env := os.Getenv(name)
+	parsed, err := strconv.Atoi(env)
+	if err != nil {
+		return 0
+	}
+	return parsed
 }

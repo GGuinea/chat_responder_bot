@@ -11,8 +11,8 @@ import (
 	"responder/api/rest"
 	"responder/config"
 	"responder/internal/handlers"
-	"responder/internal/service"
 	"responder/internal/model/bots"
+	"responder/internal/service"
 	"responder/pkg/lc_api/agent"
 	"responder/pkg/lc_api/auth"
 	"responder/pkg/lc_api/configuration"
@@ -44,14 +44,18 @@ func main() {
 	agentApi := agent.NewBasicAgentApi(config)
 	activateBot(agentApi, config.BotId)
 
-	responderDeps := service.ResponderDeps{
+	responder := service.NewResponder(&service.ResponderDeps{
 		ChatApi: agentApi,
 		Config:  config,
-	}
+	})
 
-	responder := service.NewResponder(&responderDeps)
-	authApi := auth.NewBasichAuthApi()
-	handlersFacade := handlers.NewResponderHandlersFacade(responder, config.WebhooksSecrets, config, authApi)
+	authApi := auth.NewBasicAuthApi()
+
+	handlersFacade := handlers.NewResponderHandlersFacade(&handlers.ResponderHandlerFacadeDeps{
+		Responder: responder,
+		Config:    config,
+		AuthApi:   authApi,
+	})
 
 	restServer, err := rest.NewRestServer(&rest.RestServerDeps{
 		HandlersFacade: handlersFacade,
@@ -68,7 +72,7 @@ func main() {
 	signal.Notify(stopCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-stopCh
 
-	contextWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	contextWithTimeout, cancel := context.WithTimeout(context.Background(), time.Duration(config.GracefulShutdownTimeout)*time.Second)
 	defer cancel()
 
 	if err := restServer.GracefulStop(contextWithTimeout); err != nil {
@@ -78,7 +82,7 @@ func main() {
 	select {
 	case <-contextWithTimeout.Done():
 		slog.Info("webhook server shoutdown, waiting for responder...")
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Duration(config.GracefulShutdownTimeout) * time.Second)
 		slog.Info("responder shoutdown, deactivating bot...")
 		setNotAcceptChatsFlag(agentApi, config.BotId)
 	}

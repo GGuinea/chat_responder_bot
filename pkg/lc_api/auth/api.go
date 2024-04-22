@@ -17,7 +17,7 @@ type BasicAuthApi struct {
 	client *http.Client
 }
 
-func NewBasichAuthApi() *BasicAuthApi {
+func NewBasicAuthApi() *BasicAuthApi {
 	return &BasicAuthApi{
 		client: &http.Client{},
 	}

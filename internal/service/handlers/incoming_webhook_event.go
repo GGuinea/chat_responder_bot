@@ -10,20 +10,20 @@ import (
 	"slices"
 )
 
-type incomingEventResponderHandler struct {
+type webhookEventHandler struct {
 	responder responder.Responder
 	secrets   []string
 }
 
-func newIncomingEventResponderHandler(responder responder.Responder, secrets []string) *incomingEventResponderHandler {
-	return &incomingEventResponderHandler{
+func newWebhookEventHandler(responder responder.Responder, secrets []string) *webhookEventHandler {
+	return &webhookEventHandler{
 		responder: responder,
 		secrets:   secrets,
 	}
 }
 
-func (ierh *incomingEventResponderHandler) Handle(_ http.ResponseWriter, r *http.Request) {
-	slog.Info("event received")
+func (ierh *webhookEventHandler) Handle(_ http.ResponseWriter, r *http.Request) {
+	slog.Info("New event received")
 	var incomingEvent model.IncomingEvent
 
 	defer r.Body.Close()

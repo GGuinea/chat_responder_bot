@@ -8,19 +8,19 @@ import (
 )
 
 type ResponderHandlersFacade struct {
-	incomingEventHandler    *incomingEventResponderHandler
+	webhookHandler    *webhookEventHandler
 	authCodeCallbackHandler *authCodeCallbackHandler
 }
 
 func NewResponderHandlersFacade(responder responder.Responder, webhookSecrets []string, config *config.Config, authApi auth.LcAuthApi) *ResponderHandlersFacade {
 	return &ResponderHandlersFacade{
-		incomingEventHandler:    newIncomingEventResponderHandler(responder, webhookSecrets),
+		webhookHandler:    newWebhookEventHandler(responder, webhookSecrets),
 		authCodeCallbackHandler: newAuthCodeCallbackHandler(config, authApi),
 	}
 }
 
-func (f *ResponderHandlersFacade) HandleIncomingEvent() func(http.ResponseWriter, *http.Request) {
-	return http.HandlerFunc(f.incomingEventHandler.Handle)
+func (f *ResponderHandlersFacade) HandleNewWebhookEvent() func(http.ResponseWriter, *http.Request) {
+	return http.HandlerFunc(f.webhookHandler.Handle)
 }
 
 func (f *ResponderHandlersFacade) HandleAuthCode() func(http.ResponseWriter, *http.Request) {

@@ -38,7 +38,7 @@ func NewRestServer(deps *RestServerDeps) (HttpServer, error) {
 
 func buildRoutes(mux *http.ServeMux, handlerFacade *handlers.ResponderHandlersFacade) {
 	mux.HandleFunc("GET /ping", pong)
-	mux.HandleFunc("POST /incoming_event", handlerFacade.HandleIncomingEvent())
+	mux.HandleFunc("POST /webhook", handlerFacade.HandleNewWebhookEvent())
 	mux.HandleFunc("GET /auth", handlerFacade.HandleAuthCode())
 }
 

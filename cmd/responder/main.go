@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"responder/api/rest"
 	"responder/config"
-	"responder/internal/model"
 	"responder/internal/model/bots"
 	"responder/internal/service/handlers"
 	"responder/internal/service/responder"
@@ -45,9 +44,7 @@ func main() {
 	agentApi := agent.NewBasicAgentApi(config)
 	activateBot(agentApi, config.BotId)
 
-	incomingEventsCh := make(chan model.IncomingEvent, 20)
 	responderDeps := responder.ResponderDeps{
-		IncomingEventsCh: incomingEventsCh,
 		ChatApi:          agentApi,
 	}
 	responder := responder.NewResponder(&responderDeps)

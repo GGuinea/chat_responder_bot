@@ -1,6 +1,7 @@
 package responder
 
 import (
+	"fmt"
 	"log/slog"
 	"responder/internal/model"
 	"responder/pkg/lc_api/agent"
@@ -8,24 +9,25 @@ import (
 
 type Responder interface {
 	Start()
-	HandleNewEvent(event model.IncomingEvent)
 	GracefulStop()
+	HandleIncomingEvent(event model.IncomingEvent)
+	HandleRichMessagePostback(event model.RichMessagePostbackEvent)
 }
 
 type BasicResponder struct {
-	incomingEvents chan model.IncomingEvent
+	incomingEvents chan model.ResponderEvent
 	chatApi        agent.LcAgentApi
 	close          chan struct{}
 }
 
 type ResponderDeps struct {
-	IncomingEventsCh chan model.IncomingEvent
+	IncomingEventsCh chan model.ResponderEvent
 	ChatApi          agent.LcAgentApi
 }
 
 func NewResponder(deps *ResponderDeps) *BasicResponder {
 	return &BasicResponder{
-		incomingEvents: deps.IncomingEventsCh,
+		incomingEvents: make(chan model.ResponderEvent, 20),
 		chatApi:        deps.ChatApi,
 	}
 }
@@ -49,13 +51,25 @@ func (r *BasicResponder) Start() {
 	}
 }
 
-func (r *BasicResponder) HandleNewEvent(event model.IncomingEvent) {
-	r.incomingEvents <- event
+func (r *BasicResponder) HandleIncomingEvent(event model.IncomingEvent) {
+	r.incomingEvents <- model.NewPlainMessageResponderEvent(event.Payload.ChatId)
 }
 
-func (r *BasicResponder) doResponse(event model.IncomingEvent) error {
-	slog.Info("Trying to send event")
-	response := model.NewRichCardMessageEvent(event.Payload.ChatId)
+func (r *BasicResponder) HandleRichMessagePostback(event model.RichMessagePostbackEvent) {
+	r.incomingEvents <- model.NewRichMessageResponderEvent(event.Payload.ChatId)
+}
+
+func (r *BasicResponder) doResponse(event model.ResponderEvent) error {
+	slog.Info("Trying to send response")
+	var response model.SendEventDto
+	switch event.ReplyType {
+	case model.PLAIN_MESSAGE_REPLY:
+		response = model.NewDefaultMessageEvent(event.ChatId, "plain text response")
+	case model.RICH_MESSAGE_REPLY:
+		response = model.NewRichCardMessageEvent(event.ChatId)
+	default:
+		return fmt.Errorf("Unknow reply type; got: %v", event.ReplyType)
+	}
 	return r.chatApi.SendEvent(response)
 }
 

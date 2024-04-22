@@ -36,7 +36,7 @@ func (ba *BasicAgentApi) SendEvent(eventData interface{}) error {
 		return err
 	}
 
-	request, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (ba *BasicAgentApi) SetBotRoutingStatus(botId, status string) error {
 		return err
 	}
 
-	request, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}

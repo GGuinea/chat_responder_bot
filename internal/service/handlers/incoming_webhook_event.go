@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"responder/internal/model"
@@ -22,22 +23,55 @@ func newWebhookEventHandler(responder responder.Responder, secrets []string) *we
 	}
 }
 
-func (ierh *webhookEventHandler) Handle(_ http.ResponseWriter, r *http.Request) {
+func (weh *webhookEventHandler) Handle(_ http.ResponseWriter, r *http.Request) {
 	slog.Info("New event received")
-	var incomingEvent model.IncomingEvent
+	var webhookEvent model.WebhookEvent
 
 	defer r.Body.Close()
 
-	err := json.NewDecoder(r.Body).Decode(&incomingEvent)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		slog.Info("Cannot decode body;", err)
+		slog.Error("Cannot read body bytes;", err)
 		return
 	}
 
-	fmt.Printf("%#+v\n", incomingEvent)
-	if !slices.Contains(ierh.secrets, incomingEvent.SecretKey) {
-		slog.Warn("Cannot process incoming event, wrong secret")
+	err = json.Unmarshal(body, &webhookEvent)
+	if err != nil {
+		slog.Error("Cannot unmarshal body;", err)
+		return
 	}
 
-	ierh.responder.HandleNewEvent(incomingEvent)
+	if !slices.Contains(weh.secrets, webhookEvent.SecretKey) {
+		slog.Warn("Cannot process incoming event, wrong secret key")
+		return
+	}
+	weh.handleEvent(webhookEvent.Action, body)
+}
+
+func (weh *webhookEventHandler) handleEvent(action string, eventData []byte) {
+	switch action {
+	case "incoming_event":
+		var incomingEvent model.IncomingEvent
+		err := json.Unmarshal(eventData, &incomingEvent)
+		if err != nil {
+			slog.Error("Cannot unmarshal body")
+			return
+		}
+
+		fmt.Printf("Incoming event received: %#+v\n", incomingEvent)
+		weh.responder.HandleIncomingEvent(incomingEvent)
+	case "incoming_rich_message_postback":
+		var richMessagePostback model.RichMessagePostbackEvent
+		err := json.Unmarshal(eventData, &richMessagePostback)
+		if err != nil {
+			slog.Error("Cannot unmarshal body")
+			return
+		}
+
+		fmt.Printf("Rich message postback received: %#+v\n", richMessagePostback)
+		weh.responder.HandleRichMessagePostback(richMessagePostback)
+	default:
+		slog.Warn("Unknow action", slog.Any("action", action))
+		return
+	}
 }

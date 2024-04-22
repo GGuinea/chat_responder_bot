@@ -1,11 +1,11 @@
 package model
 
-type EventInterface interface {
+type EventData interface {
 }
 
 type SendEventDto struct {
-	ChatId string         `json:"chat_id"`
-	Event  EventInterface `json:"event"`
+	ChatId string    `json:"chat_id"`
+	Event  EventData `json:"event"`
 }
 
 type MessageEventDto struct {

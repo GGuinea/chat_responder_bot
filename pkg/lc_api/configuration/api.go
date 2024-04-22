@@ -29,17 +29,7 @@ func NewBasicConfiguratioApi(cfg *config.Config) *BasicConfigurationApi {
 func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, error) {
 	url := buildCreateBotURL(*bc.cfg.ChatAPIConfig)
 
-	body, err := json.Marshal(createBotData)
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := bc.Send(request)
+	response, err := bc.send(createBotData, url)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create bot; %w", err)
 	}
@@ -54,7 +44,17 @@ func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, 
 	return &respDto.Id, nil
 }
 
-func (ba *BasicConfigurationApi) Send(request *http.Request) (*http.Response, error) {
+func (ba *BasicConfigurationApi) send(requestData interface{}, url string) (*http.Response, error) {
+	body, err := json.Marshal(requestData)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
 	request.Header.Set("Content-Type", "application/json")
 	if ba.cfg.UsePAT {
 		request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)

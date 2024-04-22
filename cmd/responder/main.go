@@ -11,7 +11,6 @@ import (
 	"responder/api/rest"
 	"responder/config"
 	"responder/internal/handlers"
-	"responder/internal/model/bots"
 	"responder/internal/service"
 	"responder/pkg/lc_api/agent"
 	"responder/pkg/lc_api/auth"
@@ -90,7 +89,7 @@ func main() {
 
 func createNewBot(config *config.Config) string {
 	configurationApi := configuration.NewBasicConfiguratioApi(config)
-	botId, err := configurationApi.CreateBot(bots.NewDefaultBot(fmt.Sprintf("testowy %d", rand.Int()), config.ClientID))
+	botId, err := configurationApi.CreateBot(configuration.NewDefaultBot(fmt.Sprintf("testowy %d", rand.Int()), config.ClientID))
 	if err != nil {
 		slog.Error("Cannot create new bot", err)
 		panic(err)
@@ -100,9 +99,9 @@ func createNewBot(config *config.Config) string {
 }
 
 func activateBot(agentApi agent.LcAgentApi, botId string) error {
-	return agentApi.SetBotRoutingStatus(botId, bots.ACCEPTING_CHATS)
+	return agentApi.SetBotRoutingStatus(botId, configuration.AGENT_STATUS_ACCEPTING_CHATS)
 }
 
 func setNotAcceptChatsFlag(agentApi agent.LcAgentApi, botId string) error {
-	return agentApi.SetBotRoutingStatus(botId, bots.NOT_ACCEPTING_CHATS)
+	return agentApi.SetBotRoutingStatus(botId, configuration.AGENT_STATUS_NOT_ACCEPTING_CHATS)
 }

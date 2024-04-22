@@ -29,17 +29,8 @@ func NewBasicAgentApi(cfg *config.Config) *BasicAgentApi {
 
 func (ba *BasicAgentApi) SendEvent(eventData interface{}) error {
 	url := buildSendEventURL(*ba.cfg.ChatAPIConfig)
-	body, err := json.Marshal(eventData)
-	if err != nil {
-		return err
-	}
 
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-
-	_, err = ba.Send(request)
+	_, err := ba.Send(eventData, url)
 
 	if err != nil {
 		return err
@@ -52,17 +43,7 @@ func (ba *BasicAgentApi) SetBotRoutingStatus(botId, status string) error {
 	url := buildSetBotStatusURL(*ba.cfg.ChatAPIConfig)
 	reqStruct := newSetRouteStatusRequest(status, botId)
 
-	body, err := json.Marshal(reqStruct)
-	if err != nil {
-		return err
-	}
-
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-
-	_, err = ba.Send(request)
+	_, err := ba.Send(reqStruct, url)
 	if err != nil {
 		return err
 	}
@@ -73,17 +54,7 @@ func (ba *BasicAgentApi) ListAgentsIdsForTransfer(chatId string) ([]string, erro
 	url := buildListAgentsForTransferURL(*ba.cfg.ChatAPIConfig)
 	reqStruct := newListAgentsForTransferRequest(chatId)
 
-	body, err := json.Marshal(reqStruct)
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := ba.Send(request)
+	response, err := ba.Send(reqStruct, url)
 	if err != nil {
 		return nil, err
 	}
@@ -109,17 +80,7 @@ func (ba *BasicAgentApi) TransferChat(chatId, newAgentId string) error {
 	url := buildTransferChatURL(*ba.cfg.ChatAPIConfig)
 	reqStruct := newTransferToAgentRequest(chatId, newAgentId)
 
-	body, err := json.Marshal(reqStruct)
-	if err != nil {
-		return err
-	}
-
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-
-	_, err = ba.Send(request)
+	_, err := ba.Send(reqStruct, url)
 	if err != nil {
 		return err
 	}
@@ -127,7 +88,17 @@ func (ba *BasicAgentApi) TransferChat(chatId, newAgentId string) error {
 	return nil
 }
 
-func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
+func (ba *BasicAgentApi) Send(requestData interface{}, url string) (*http.Response, error) {
+	body, err := json.Marshal(requestData)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
 	request.Header.Set("Content-Type", "application/json")
 	if ba.cfg.UsePAT {
 		request.Header.Set("Authorization", "Basic "+ba.cfg.PAT)
@@ -149,7 +120,6 @@ func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 	}
 
 	return response, nil
-
 }
 
 func buildTransferChatURL(cfg config.ChatAPI) string {

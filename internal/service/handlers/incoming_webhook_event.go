@@ -23,6 +23,11 @@ func newWebhookEventHandler(responder responder.Responder, secrets []string) *we
 	}
 }
 
+var (
+	EVENT_TYPE_INCOMING_EVENT                 = "incoming_event"
+	EVENT_TYPE_INCOMING_RICH_MESSAGE_POSTBACK = "incoming_rich_message_postback"
+)
+
 func (weh *webhookEventHandler) Handle(_ http.ResponseWriter, r *http.Request) {
 	slog.Info("New event received")
 	var webhookEvent model.WebhookEvent
@@ -50,7 +55,7 @@ func (weh *webhookEventHandler) Handle(_ http.ResponseWriter, r *http.Request) {
 
 func (weh *webhookEventHandler) handleEvent(action string, eventData []byte) {
 	switch action {
-	case "incoming_event":
+	case EVENT_TYPE_INCOMING_EVENT:
 		var incomingEvent model.IncomingEvent
 		err := json.Unmarshal(eventData, &incomingEvent)
 		if err != nil {
@@ -60,7 +65,7 @@ func (weh *webhookEventHandler) handleEvent(action string, eventData []byte) {
 
 		fmt.Printf("Incoming event received: %#+v\n", incomingEvent)
 		weh.responder.HandleIncomingEvent(incomingEvent)
-	case "incoming_rich_message_postback":
+	case EVENT_TYPE_INCOMING_RICH_MESSAGE_POSTBACK:
 		var richMessagePostback model.RichMessagePostbackEvent
 		err := json.Unmarshal(eventData, &richMessagePostback)
 		if err != nil {

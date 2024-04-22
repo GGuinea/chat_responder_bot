@@ -5,10 +5,6 @@ type ListAgentsForTransferRequest struct {
 }
 
 type ListAgentsForTransferResponse struct {
-	AgentId []Agent
-}
-
-type Agent struct {
 	AgentId string `json:"agent_id"`
 }
 

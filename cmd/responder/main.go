@@ -45,7 +45,8 @@ func main() {
 	activateBot(agentApi, config.BotId)
 
 	responderDeps := responder.ResponderDeps{
-		ChatApi:          agentApi,
+		ChatApi: agentApi,
+		Config:  config,
 	}
 	responder := responder.NewResponder(&responderDeps)
 	authApi := auth.NewBasichAuthApi()

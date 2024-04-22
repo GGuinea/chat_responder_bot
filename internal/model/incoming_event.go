@@ -20,11 +20,12 @@ type Event struct {
 }
 
 type RichMessagePostbackEvent struct {
-	Payload IncomingEventPayload `json:"payload"`
+	Payload RichMessagePostbackEventPayload `json:"payload"`
 }
 
 type RichMessagePostbackEventPayload struct {
-	ChatId string `json:"chat_id"`
+	ChatId   string              `json:"chat_id"`
+	Postback RichMessagePostback `json:"postback"`
 }
 
 type RichMessagePostback struct {

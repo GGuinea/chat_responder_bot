@@ -15,6 +15,7 @@ type LcAgentApi interface {
 	SendEvent(event interface{}) error
 	SetBotRoutingStatus(botId string, status string) error
 	ListAgentsIdsForTransfer(chatId string) ([]string, error)
+	TransferChat(chatId string, newAgentId string) error
 }
 
 type BasicAgentApi struct {
@@ -94,7 +95,47 @@ func (ba *BasicAgentApi) ListAgentsIdsForTransfer(chatId string) ([]string, erro
 		return nil, decodeErrorMsg(response.Body)
 	}
 
-	return nil, nil
+	var respDto []model.ListAgentsForTransferResponse
+
+	err = json.NewDecoder(response.Body).Decode(&respDto)
+	if err != nil {
+		slog.Error("Cannot decode create bot response; ", err)
+	}
+
+	return getStringArrayResponse(respDto), nil
+}
+
+func getStringArrayResponse(agents []model.ListAgentsForTransferResponse) (resp []string) {
+	for _, agent := range agents {
+		resp = append(resp, agent.AgentId)
+	}
+	return
+}
+
+func (ba *BasicAgentApi) TransferChat(chatId, newAgentId string) error {
+	url := buildTransferChatURL(*ba.cfg.ChatAPIConfig)
+	reqStruct := model.NewTransferToAgentRequest(chatId, newAgentId)
+
+	body, err := json.Marshal(reqStruct)
+	if err != nil {
+		return err
+	}
+
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	response, err := ba.Send(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return decodeErrorMsg(response.Body)
+	}
+
+	return nil
 }
 
 func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
@@ -129,6 +170,10 @@ func decodeErrorMsg(body io.ReadCloser) error {
 		return fmt.Errorf("Cannot even decode body for error")
 	}
 	return fmt.Errorf("Status code different than 200, %s", string(errorBody))
+}
+
+func buildTransferChatURL(cfg config.ChatAPI) string {
+	return cfg.BaseURL + cfg.APIVersion + "/agent/action/transfer_chat"
 }
 
 func buildListAgentsForTransferURL(cfg config.ChatAPI) string {

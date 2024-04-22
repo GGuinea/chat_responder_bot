@@ -14,6 +14,7 @@ import (
 type LcAgentApi interface {
 	SendEvent(event interface{}) error
 	SetBotRoutingStatus(botId string, status string) error
+	ListAgentsIdsForTransfer(chatId string) ([]string, error)
 }
 
 type BasicAgentApi struct {
@@ -65,9 +66,35 @@ func (ba *BasicAgentApi) SetBotRoutingStatus(botId, status string) error {
 
 	_, err = ba.Send(request)
 	if err != nil {
-		return nil
+		return err
 	}
 	return nil
+}
+
+func (ba *BasicAgentApi) ListAgentsIdsForTransfer(chatId string) ([]string, error) {
+	url := buildListAgentsForTransferURL(*ba.cfg.ChatAPIConfig)
+	reqStruct := model.NewListAgentsForTransferRequest(chatId)
+
+	body, err := json.Marshal(reqStruct)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := ba.Send(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, decodeErrorMsg(response.Body)
+	}
+
+	return nil, nil
 }
 
 func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
@@ -77,6 +104,7 @@ func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 	} else {
 		request.Header.Set("Authorization", "Bearer "+ba.cfg.OauthConfig.AccessToken)
 	}
+
 	if ba.cfg.UseBot {
 		request.Header.Set("X-Author-Id", ba.cfg.BotId)
 	}
@@ -87,17 +115,24 @@ func (ba *BasicAgentApi) Send(request *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	if response.StatusCode != 200 {
-		errorBody, err := io.ReadAll(response.Body)
-		if err != nil {
-			slog.Error("Cannot decode body for error")
-		}
-		slog.Error("Status code different than 200; ", slog.Any("statusCode", response.StatusCode), slog.Any("error", string(errorBody)))
-		return nil, fmt.Errorf("Status code different than 200; %v", response.StatusCode)
+	if response.StatusCode != http.StatusOK {
+		return nil, decodeErrorMsg(response.Body)
 	}
 
 	return response, nil
 
+}
+
+func decodeErrorMsg(body io.ReadCloser) error {
+	errorBody, err := io.ReadAll(body)
+	if err != nil {
+		return fmt.Errorf("Cannot even decode body for error")
+	}
+	return fmt.Errorf("Status code different than 200, %s", string(errorBody))
+}
+
+func buildListAgentsForTransferURL(cfg config.ChatAPI) string {
+	return cfg.BaseURL + cfg.APIVersion + "/agent/action/list_agents_for_transfer"
 }
 
 func buildSendEventURL(cfg config.ChatAPI) string {

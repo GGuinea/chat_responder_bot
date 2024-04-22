@@ -35,7 +35,7 @@ func (bc *BasicConfigurationApi) CreateBot(createBotData interface{}) (*string, 
 		return nil, err
 	}
 
-	request, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (ba *BasicConfigurationApi) Send(request *http.Request) (*http.Response, er
 		return nil, err
 	}
 
-	if response.StatusCode != 200 {
+	if response.StatusCode != http.StatusOK {
 		errorBody, err := io.ReadAll(response.Body)
 		if err != nil {
 			slog.Error("Cannot decode body for error")

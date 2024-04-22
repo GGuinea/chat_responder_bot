@@ -59,10 +59,13 @@ func NewRichCardMessageEvent(chatId string) SendEventDto {
 				Subtitle: "Transfer to real human",
 				Buttons: []RichMessageButton{
 					{
-						Type:       "message",
-						Text:       "transfer",
-						PostbackId: "transfer_to_human",
-						Value:      "transfer",
+						Text:       "yes",
+						PostbackId: "action_yes",
+						UserIDS:    []string{},
+					},
+					{
+						Text:       "no",
+						PostbackId: "action_no",
 						UserIDS:    []string{},
 					},
 				},

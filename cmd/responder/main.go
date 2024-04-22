@@ -30,6 +30,7 @@ func main() {
 	flag.BoolVar(&useBot, "use_bot", false, "Ans as bot")
 	flag.StringVar(&botId, "bot_id", "", "Bot id to ans")
 	flag.BoolVar(&usePAT, "use_pat", false, "Use PAT with basic auth")
+
 	flag.Parse()
 
 	if useBot && botId == "" {
